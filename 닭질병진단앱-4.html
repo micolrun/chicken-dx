@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>🐔 닭 질병 진단 커뮤니티</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;-webkit-font-smoothing:antialiased;background:#F0F7F0}
+#root{max-width:600px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:#F0F7F0}
+
+/* ── 공통 ── */
+.btn{padding:13px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;-webkit-tap-highlight-color:transparent;transition:opacity .2s}
+.btn:active{opacity:.85}
+.btn-green{background:linear-gradient(135deg,#2E7D32,#43A047);color:#fff;box-shadow:0 4px 14px rgba(46,125,50,.28)}
+.btn-blue{background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;box-shadow:0 4px 14px rgba(13,71,161,.25)}
+.btn-red{background:#FFEBEE;color:#C62828;border:1.5px solid #FFCDD2}
+.btn-gray{background:#F5F5F5;color:#616161;border:1.5px solid #E0E0E0}
+.btn:disabled{background:#BDBDBD;box-shadow:none;cursor:not-allowed;opacity:.7}
+.inp{width:100%;padding:12px 14px;border:2px solid #E0E0E0;border-radius:12px;font-size:15px;font-family:inherit;outline:none;color:#212121;transition:border-color .2s;background:#fff}
+.inp:focus{border-color:#2E7D32}
+.lbl{font-size:13px;font-weight:600;color:#37474F;margin-bottom:6px;display:block}
+.err{color:#C62828;font-size:13px;margin-top:8px;text-align:center}
+.card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1.5px solid #F0F0F0;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.chip-green{background:#E8F5E9;color:#2E7D32}
+.chip-blue{background:#E8EAF6;color:#1565C0}
+.chip-orange{background:#FFF3E0;color:#E65100}
+.chip-red{background:#FFEBEE;color:#C62828}
+.chip-gray{background:#F5F5F5;color:#616161}
+
+/* ── 로딩 ── */
+.loading-full{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(155deg,#071a0c,#1B5E20)}
+.loading-icon{font-size:64px}
+.loading-txt{color:#fff;font-size:16px;margin-top:16px}
+.spin{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;justify-content:center;gap:10px}
+
+/* ── 인증 화면 ── */
+.auth-screen{min-height:100vh;background:linear-gradient(155deg,#071a0c 0%,#0f3a1a 35%,#1B5E20 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.auth-logo{text-align:center;margin-bottom:32px}
+.auth-logo-icon{font-size:64px}
+.auth-logo-title{color:#fff;font-size:24px;font-weight:900;margin-top:12px}
+.auth-logo-sub{color:#81C784;font-size:13px;margin-top:6px}
+.auth-card{background:#fff;border-radius:24px;padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.auth-tabs{display:flex;background:#F5F5F5;border-radius:10px;padding:3px;margin-bottom:24px}
+.auth-tab{flex:1;padding:9px;text-align:center;border-radius:8px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:#9E9E9E;transition:all .2s}
+.auth-tab.active{background:#fff;color:#1B5E20;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.form-row{margin-bottom:14px}
+.role-select{display:flex;gap:10px;margin-bottom:14px}
+.role-opt{flex:1;padding:12px 8px;border:2px solid #E0E0E0;border-radius:12px;text-align:center;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.role-opt.sel{border-color:#1B5E20;background:#E8F5E9}
+.role-opt-icon{font-size:28px}
+.role-opt-label{font-size:13px;font-weight:600;margin-top:4px}
+
+/* ── 대기/거절 ── */
+.status-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:#F0F7F0}
+.status-icon{font-size:72px}
+.status-title{font-size:22px;font-weight:700;margin-top:20px;color:#212121}
+.status-desc{color:#616161;font-size:14px;margin-top:12px;line-height:1.8;max-width:300px}
+
+/* ── 상단 헤더 ── */
+.top-hdr{background:#1B5E20;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.app-name{color:#fff;font-weight:900;font-size:16px}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-name-chip{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 12px;color:#fff;font-size:12px;font-weight:600}
+
+/* ── 탭 바 ── */
+.tab-bar{display:flex;background:#fff;border-bottom:2px solid #E8F5E9;position:sticky;top:52px;z-index:99;overflow-x:auto}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab{flex:1;min-width:60px;padding:10px 6px;text-align:center;cursor:pointer;border:none;background:none;font-family:inherit;position:relative;-webkit-tap-highlight-color:transparent}
+.tab-icon{font-size:20px;display:block}
+.tab-label{font-size:10px;font-weight:600;color:#9E9E9E;margin-top:2px;display:block;white-space:nowrap}
+.tab.active .tab-label{color:#1B5E20}
+.tab-indicator{position:absolute;bottom:0;left:15%;right:15%;height:2.5px;background:#1B5E20;border-radius:2px;display:none}
+.tab.active .tab-indicator{display:block}
+.tab-badge{position:absolute;top:4px;right:calc(50% - 20px);background:#E53935;color:#fff;border-radius:10px;padding:1px 5px;font-size:10px;font-weight:700}
+
+/* ── 컨텐츠 ── */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 80px}
+
+/* ── 게시글 카드 ── */
+.post-card{background:#fff;border-radius:16px;padding:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.05);border:1.5px solid #F0F0F0;margin-bottom:10px;-webkit-tap-highlight-color:transparent;transition:transform .15s}
+.post-card:active{transform:scale(.98)}
+.post-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.post-title{font-weight:700;font-size:15px;color:#212121;margin-bottom:6px;line-height:1.4}
+.post-preview{color:#616161;font-size:13px;line-height:1.65;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.post-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.post-date{color:#9E9E9E;font-size:11px}
+.post-comments{color:#9E9E9E;font-size:12px}
+.target-vet{background:#E3F2FD;color:#1565C0;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-top:6px;display:inline-flex;align-items:center;gap:4px}
+
+/* ── 수의사 카드 ── */
+.vet-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.05);border:1.5px solid #E8EAF6;margin-bottom:10px}
+.vet-name{font-weight:700;font-size:15px;color:#1A237E}
+.vet-clinic{color:#616161;font-size:13px;margin-top:3px}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:24px;right:calc(50% - 284px);background:linear-gradient(135deg,#2E7D32,#43A047);color:#fff;border:none;border-radius:28px;padding:14px 24px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(46,125,50,.4);z-index:90;font-family:inherit;display:flex;align-items:center;gap:8px;-webkit-tap-highlight-color:transparent}
+.fab:active{opacity:.87;transform:scale(.97)}
+@media(max-width:600px){.fab{right:16px}}
+
+/* ── 오버레이 화면 ── */
+.overlay{position:fixed;inset:0;max-width:600px;margin:0 auto;background:#F0F7F0;z-index:150;display:flex;flex-direction:column;overflow:hidden}
+.ov-hdr{background:#1B5E20;display:flex;align-items:center;gap:10px;padding:0 16px;height:56px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.ov-hdr.blue{background:#0D47A1}
+.ov-hdr.admin{background:#37474F}
+.ov-back{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:2px 6px;line-height:1}
+.ov-title{color:#fff;font-weight:700;font-size:15px;flex:1}
+.ov-scroll{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+
+/* ── 게시글 상세 ── */
+.post-detail-title{font-size:20px;font-weight:700;color:#212121;line-height:1.4;margin-bottom:12px}
+.post-detail-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.post-detail-content{color:#37474F;font-size:14px;line-height:1.85;white-space:pre-wrap;margin-bottom:20px}
+.divider{height:1px;background:#F0F0F0;margin:16px 0}
+.comment-count{font-weight:700;font-size:14px;color:#1B5E20;margin-bottom:12px}
+.comment-item{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;border:1.5px solid #F0F0F0}
+.comment-author{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.comment-name{font-weight:700;font-size:13px;color:#212121}
+.comment-date{font-size:11px;color:#9E9E9E}
+.comment-content{color:#37474F;font-size:14px;line-height:1.7;white-space:pre-wrap}
+.comment-input-area{position:sticky;bottom:0;background:#fff;padding:12px 16px;border-top:1.5px solid #E0E0E0;display:flex;gap:10px;align-items:flex-end}
+.comment-textarea{flex:1;padding:11px 14px;border:2px solid #E0E0E0;border-radius:12px;font-size:14px;font-family:inherit;resize:none;outline:none;min-height:44px;max-height:120px;color:#212121}
+.comment-textarea:focus{border-color:#2E7D32}
+.comment-send-btn{padding:11px 16px;background:#2E7D32;color:#fff;border:none;border-radius:12px;cursor:pointer;font-weight:700;font-size:14px;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.comment-send-btn:disabled{background:#BDBDBD;cursor:not-allowed}
+
+/* ── 새 글 쓰기 ── */
+.vet-select-list{max-height:240px;overflow-y:auto;border:2px solid #E0E0E0;border-radius:12px;margin-bottom:14px}
+.vet-select-item{padding:12px 14px;cursor:pointer;border-bottom:1px solid #F0F0F0;-webkit-tap-highlight-color:transparent}
+.vet-select-item:last-child{border-bottom:none}
+.vet-select-item:active{background:#F5F5F5}
+.vet-select-item.selected{background:#E8F5E9}
+.selected-vet-chip{background:#E3F2FD;color:#1565C0;padding:8px 14px;border-radius:12px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+
+/* ── 관리자 ── */
+.admin-user-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;border:1.5px solid #F0F0F0}
+.admin-user-name{font-weight:700;font-size:15px;color:#212121}
+.admin-user-info{color:#616161;font-size:13px;margin-top:4px}
+.admin-actions{display:flex;gap:10px;margin-top:12px}
+.admin-btn-approve{flex:1;padding:10px;background:#E8F5E9;color:#2E7D32;border:1.5px solid #A5D6A7;border-radius:10px;cursor:pointer;font-weight:700;font-family:inherit;font-size:13px}
+.admin-btn-reject{flex:1;padding:10px;background:#FFEBEE;color:#C62828;border:1.5px solid #FFCDD2;border-radius:10px;cursor:pointer;font-weight:700;font-family:inherit;font-size:13px}
+
+/* ── 빈 상태 ── */
+.empty{text-align:center;padding:48px 16px}
+.empty-icon{font-size:48px}
+.empty-txt{color:#9E9E9E;font-size:14px;margin-top:12px;line-height:1.75}
+.spacer{height:32px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc,
+         onSnapshot, getDocs, setDoc, getDoc }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+         onAuthStateChanged, signOut }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+// ╔══════════════════════════════════════╗
+// ║  Firebase 설정 (자동 입력됨)         ║
+// ╚══════════════════════════════════════╝
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyALVnXknySYP_snXoSRLFEECF2MRtQJ0Yc",
+  authDomain:        "chicken-dx.firebaseapp.com",
+  projectId:         "chicken-dx",
+  storageBucket:     "chicken-dx.firebasestorage.app",
+  messagingSenderId: "356503598433",
+  appId:             "1:356503598433:web:82cb4969475d53dd9e4120",
+};
+
+// 관리자 이메일 (이 이메일로 가입하면 자동 관리자)
+const ADMIN_EMAIL = 'admin@chicken-dx.com';
+
+const fbApp = initializeApp(FIREBASE_CONFIG);
+const db    = getFirestore(fbApp);
+const auth  = getAuth(fbApp);
+
+// ── 상태 ──────────────────────────────────────
+let S = {
+  screen: 'loading',   // loading|login|register|pending|rejected|main|postDetail|newPost
+  authUser: null, userDoc: null,
+  mainTab: 'board',    // board|vets|myposts|admin|settings
+  showVetSelect: false,
+
+  // 로그인 폼
+  lEmail:'', lPass:'', lErr:'', lLoading:false,
+
+  // 가입 폼
+  rRole:'farmer', rName:'', rEmail:'', rPass:'', rFarm:'', rClinic:'', rErr:'', rLoading:false,
+
+  // 데이터
+  posts:[], vets:[], myPosts:[], pendingUsers:[],
+
+  // 게시글 상세
+  selPost:null, comments:[],
+
+  // 새 글
+  npTitle:'', npContent:'', npTargetVetId:null, npTargetVetName:'', npPosting:false,
+
+  // 댓글
+  newComment:'', commenting:false,
+
+  // 리스너
+  _unsubUser:null, _unsubPosts:null, _unsubComments:null, _unsubPending:null,
+};
+
+function set(u){ Object.assign(S,u); render(); }
+
+// ── 유틸 ──────────────────────────────────────
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtDate = ts => new Date(ts).toLocaleDateString('ko-KR',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const roleLabel = r => ({farmer:'🌾 농가', vet:'🩺 수의사', admin:'⚙️ 관리자'}[r]||r);
+const roleChipCls = r => ({farmer:'chip-green', vet:'chip-blue', admin:'chip-gray'}[r]||'chip-gray');
+
+// ── 중복 제출 방지 잠금 ────────────────────────
+let _registering = false;
+let _posting = false;
+let _commenting = false;
+let _mainStarted = false;
+let _clickBound = false; // 클릭 리스너 중복 방지
+onAuthStateChanged(auth, user => {
+  if(user){
+    S.authUser = user;
+    S.lLoading = false; // 로딩 상태 초기화
+    S.screen = 'loading';
+    render();
+    startUserListener(user.uid);
+  } else {
+    ['_unsubUser','_unsubPosts','_unsubComments','_unsubPending'].forEach(k=>{ if(S[k]){S[k]();S[k]=null;} });
+    _mainStarted = false; // 로그아웃 시 초기화
+    _registering = false;
+    Object.assign(S,{authUser:null,userDoc:null,posts:[],vets:[],myPosts:[],pendingUsers:[],
+      screen:'login', lLoading:false, rLoading:false});
+    render();
+  }
+});
+
+function startUserListener(uid){
+  if(S._unsubUser) S._unsubUser();
+  let docChecked = false;
+  S._unsubUser = onSnapshot(doc(db,'users',uid), snap=>{
+    if(!snap.exists()){
+      // 문서가 없으면 3초 후 재확인
+      if(!docChecked){
+        docChecked = true;
+        setTimeout(async ()=>{
+          const d = await getDoc(doc(db,'users',uid));
+          if(!d.exists()){
+            // 문서가 진짜 없으면 로그아웃 후 오류 표시
+            await signOut(auth);
+            set({screen:'login', lErr:'가입 정보를 찾을 수 없습니다. 다시 가입해 주세요.', lLoading:false});
+          }
+        }, 3000);
+      }
+      return;
+    }
+    docChecked = true;
+    const ud = snap.data();
+    S.userDoc = ud;
+    if(ud.status==='approved'){
+      if(S.screen==='loading'||S.screen==='pending'){
+        S.screen='main';
+        startMainListeners(ud);
+      }
+    } else if(ud.status==='pending'){
+      S.screen='pending';
+    } else {
+      S.screen='rejected';
+    }
+    render();
+  });
+}
+
+function startMainListeners(ud){
+  if(_mainStarted) return; // 중복 실행 차단
+  _mainStarted = true;
+  // 게시글 (최신순 정렬은 클라이언트에서)
+  if(S._unsubPosts) S._unsubPosts();
+  S._unsubPosts = onSnapshot(collection(db,'posts'), snap=>{
+    S.posts = snap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>b.createdAt - a.createdAt);
+    S.myPosts = S.posts.filter(p=>p.authorId===S.authUser?.uid);
+    render();
+  });
+  // 수의사 목록
+  refreshVets();
+  // 관리자: 대기 목록
+  if(ud.role==='admin'){
+    if(S._unsubPending) S._unsubPending();
+    S._unsubPending = onSnapshot(collection(db,'users'), snap=>{
+      const seen = new Set();
+      S.pendingUsers = snap.docs
+        .map(d=>({id:d.id,...d.data()}))
+        .filter(u=>{
+          if(u.status!=='pending') return false;
+          if(seen.has(u.email)) return false;
+          seen.add(u.email); return true;
+        });
+      render();
+    });
+  }
+}
+
+function refreshVets(){
+  getDocs(query(collection(db,'users'),where('role','==','vet'),where('status','==','approved')))
+    .then(snap=>{ S.vets=snap.docs.map(d=>({id:d.id,...d.data()})); render(); });
+}
+
+async function loadComments(postId){
+  if(!postId) return;
+  try{
+    const snap = await getDocs(collection(db,'comments'));
+    S.comments = snap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .filter(c=>c.postId===postId)
+      .sort((a,b)=>a.createdAt - b.createdAt);
+    render();
+  }catch(e){
+    console.error('댓글 로드 오류:', e);
+  }
+}
+
+function startCommentsListener(postId){
+  if(S._unsubComments){ S._unsubComments(); S._unsubComments=null; }
+  // 즉시 로드
+  loadComments(postId);
+  // 실시간 감지 (컬렉션 전체)
+  S._unsubComments = onSnapshot(collection(db,'comments'), ()=>{
+    loadComments(postId);
+  });
+}
+
+// ── Auth 액션 ─────────────────────────────────
+async function doLogin(){
+  if(!S.lEmail.trim()||!S.lPass||S.lLoading) return;
+  set({lLoading:true,lErr:''});
+  try{
+    await signInWithEmailAndPassword(auth,S.lEmail.trim(),S.lPass);
+  }catch(e){
+    const m={'auth/user-not-found':'등록된 이메일이 없습니다.','auth/wrong-password':'비밀번호가 틀렸습니다.',
+             'auth/invalid-credential':'이메일 또는 비밀번호가 올바르지 않습니다.','auth/invalid-email':'이메일 형식이 올바르지 않습니다.'};
+    set({lLoading:false,lErr:m[e.code]||'로그인 오류: '+e.message});
+  }
+}
+
+async function doRegister(){
+  if(_registering) return; // 중복 제출 완전 차단
+  const {rRole,rName,rEmail,rPass,rFarm,rClinic} = S;
+  if(!rName.trim()||!rEmail.trim()||!rPass){ set({rErr:'모든 항목을 입력해주세요.'}); return; }
+  if(rRole==='farmer'&&!rFarm.trim()){ set({rErr:'농장명을 입력해주세요.'}); return; }
+  if(rRole==='vet'&&!rClinic.trim()){ set({rErr:'병원/기관명을 입력해주세요.'}); return; }
+  if(rPass.length<6){ set({rErr:'비밀번호는 6자 이상이어야 합니다.'}); return; }
+  set({rLoading:true,rErr:''});
+  _registering = true;
+  try{
+    const cred = await createUserWithEmailAndPassword(auth,rEmail.trim(),rPass);
+    const isAdmin = rEmail.trim()===ADMIN_EMAIL;
+    const userData = {
+      uid:cred.user.uid, name:rName.trim(), email:rEmail.trim(),
+      role: isAdmin?'admin':rRole,
+      farmName:  rRole==='farmer'?rFarm.trim():'',
+      clinicName:rRole==='vet'?rClinic.trim():'',
+      status: isAdmin?'approved':'pending',
+      createdAt:Date.now(),
+    };
+    // Firestore 저장 (재시도 포함)
+    let saved = false;
+    for(let i=0; i<3; i++){
+      try{
+        await setDoc(doc(db,'users',cred.user.uid), userData);
+        saved = true; break;
+      }catch(err){
+        if(i===2) throw err;
+        await new Promise(r=>setTimeout(r,1000));
+      }
+    }
+    set({rLoading:false});
+  }catch(e){
+    const m={'auth/email-already-in-use':'이미 가입된 이메일입니다.','auth/weak-password':'비밀번호가 너무 약합니다.',
+             'auth/invalid-email':'이메일 형식이 올바르지 않습니다.'};
+    _registering = false;
+    set({rLoading:false,rErr:m[e.code]||'가입 오류: '+e.message});
+  }
+}
+
+// ── 게시글 액션 ───────────────────────────────
+async function doPost(){
+  if(_posting||!S.npTitle.trim()||!S.npContent.trim()) return;
+  _posting = true;
+  set({npPosting:true});
+  try{
+    await addDoc(collection(db,'posts'),{
+      authorId:S.authUser.uid, authorName:S.userDoc.name,
+      authorRole:S.userDoc.role, authorFarm:S.userDoc.farmName||'',
+      title:S.npTitle.trim(), content:S.npContent.trim(),
+      targetVetId:S.npTargetVetId||null, targetVetName:S.npTargetVetName||null,
+      commentCount:0, createdAt:Date.now(),
+    });
+    set({npPosting:false,npTitle:'',npContent:'',npTargetVetId:null,npTargetVetName:'',screen:'main',showVetSelect:false});
+    _posting = false;
+  }catch(e){
+    alert('오류: '+e.message);
+    _posting = false;
+    set({npPosting:false});
+  }
+}
+
+async function doComment(){
+  if(_commenting||!S.newComment.trim()||!S.selPost) return;
+  _commenting = true;
+  set({commenting:true});
+  try{
+    await addDoc(collection(db,'comments'),{
+      postId:S.selPost.id, authorId:S.authUser.uid,
+      authorName:S.userDoc.name, authorRole:S.userDoc.role,
+      content:S.newComment.trim(), createdAt:Date.now(),
+    });
+    await updateDoc(doc(db,'posts',S.selPost.id),{commentCount:(S.selPost.commentCount||0)+1});
+    set({commenting:false,newComment:''});
+    _commenting = false;
+    // 댓글 즉시 새로고침
+    loadComments(S.selPost.id);
+  }catch(e){
+    alert('오류: '+e.message);
+    _commenting = false;
+    set({commenting:false});
+  }
+}
+
+// ── 댓글 삭제 ────────────────────────────────
+async function doDeleteComment(commentId){
+  if(!confirm('이 댓글을 삭제하시겠습니까?')) return;
+  try{
+    await deleteDoc(doc(db,'comments',commentId));
+    const cnt = Math.max(0,(S.selPost?.commentCount||1)-1);
+    await updateDoc(doc(db,'posts',S.selPost.id),{commentCount:cnt});
+    loadComments(S.selPost.id);
+  }catch(e){
+    alert('삭제 오류: '+e.message);
+  }
+}
+
+// ── 관리자 액션 ───────────────────────────────
+async function doDeletePost(postId){
+  if(!confirm('이 게시글을 삭제하시겠습니까?\n댓글도 함께 삭제됩니다.')) return;
+  try{
+    // 댓글 함께 삭제
+    const commentsSnap = await getDocs(collection(db,'comments'));
+    const toDelete = commentsSnap.docs.filter(d=>d.data().postId===postId);
+    await Promise.all(toDelete.map(d=>deleteDoc(doc(db,'comments',d.id))));
+    // 게시글 삭제
+    await deleteDoc(doc(db,'posts',postId));
+    // 목록으로 돌아가기
+    if(S._unsubComments){ S._unsubComments(); S._unsubComments=null; }
+    set({screen:'main', selPost:null, comments:[]});
+  }catch(e){
+    alert('삭제 오류: '+e.message);
+  }
+}
+async function doApprove(uid,approve){
+  await updateDoc(doc(db,'users',uid),{status:approve?'approved':'rejected',reviewedAt:Date.now()});
+  if(approve) refreshVets();
+}
+
+// ── 렌더 ──────────────────────────────────────
+function render(){
+  document.getElementById('root').innerHTML = buildHTML();
+  bindEvents();
+}
+
+function buildHTML(){
+  switch(S.screen){
+    case 'loading':   return rLoading();
+    case 'login':     return rAuth('login');
+    case 'register':  return rAuth('register');
+    case 'pending':   return rStatus('pending');
+    case 'rejected':  return rStatus('rejected');
+    case 'postDetail':return rMain()+rPostDetail();
+    case 'newPost':   return rMain()+rNewPost();
+    default:          return rMain();
+  }
+}
+
+// ── 로딩 ──────────────────────────────────────
+function rLoading(){ return`
+<div class="loading-full">
+  <div class="loading-icon">🐔</div>
+  <div class="loading-txt"><div class="spin"></div>&nbsp; 로딩 중...</div>
+</div>`; }
+
+// ── 인증 화면 ─────────────────────────────────
+function rAuth(tab){ return`
+<div class="auth-screen">
+  <div class="auth-logo">
+    <div class="auth-logo-icon">🐔</div>
+    <div class="auth-logo-title">닭 질병 진단 커뮤니티</div>
+    <div class="auth-logo-sub">승인된 농가 · 수의사 전용</div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab ${tab==='login'?'active':''}" data-a="auth-tab" data-tab="login">로그인</button>
+      <button class="auth-tab ${tab==='register'?'active':''}" data-a="auth-tab" data-tab="register">회원가입</button>
+    </div>
+    ${tab==='login' ? rLoginForm() : rRegisterForm()}
+  </div>
+</div>`; }
+
+function rLoginForm(){ return`
+<div class="form-row"><label class="lbl">이메일</label>
+  <input class="inp" id="l-email" type="email" placeholder="이메일 주소" value="${esc(S.lEmail)}" autocomplete="email"/></div>
+<div class="form-row"><label class="lbl">비밀번호</label>
+  <input class="inp" id="l-pass" type="password" placeholder="비밀번호" autocomplete="current-password"/></div>
+${S.lErr?`<div class="err">${esc(S.lErr)}</div>`:''}
+<button class="btn btn-green" data-a="do-login" style="margin-top:18px" ${S.lLoading?'disabled':''}>
+  ${S.lLoading?`<div class="loading-row"><div class="spin"></div><span>로그인 중...</span></div>`:'로그인'}
+</button>`; }
+
+function rRegisterForm(){ return`
+<div style="margin-bottom:14px">
+  <label class="lbl">회원 유형 선택</label>
+  <div class="role-select">
+    <div class="role-opt ${S.rRole==='farmer'?'sel':''}" data-a="set-role" data-role="farmer">
+      <div class="role-opt-icon">🌾</div>
+      <div class="role-opt-label">농가</div>
+    </div>
+    <div class="role-opt ${S.rRole==='vet'?'sel':''}" data-a="set-role" data-role="vet">
+      <div class="role-opt-icon">🩺</div>
+      <div class="role-opt-label">수의사</div>
+    </div>
+  </div>
+</div>
+<div class="form-row"><label class="lbl">이름</label>
+  <input class="inp" id="r-name" type="text" placeholder="실명" value="${esc(S.rName)}" autocomplete="name"/></div>
+<div class="form-row"><label class="lbl">${S.rRole==='farmer'?'농장명':'병원 / 기관명'}</label>
+  <input class="inp" id="r-org" type="text" placeholder="${S.rRole==='farmer'?'농장 이름':'병원 또는 기관명'}" value="${esc(S.rRole==='farmer'?S.rFarm:S.rClinic)}"/></div>
+<div class="form-row"><label class="lbl">이메일</label>
+  <input class="inp" id="r-email" type="email" placeholder="이메일 주소" value="${esc(S.rEmail)}" autocomplete="email"/></div>
+<div class="form-row"><label class="lbl">비밀번호 <span style="color:#9E9E9E;font-weight:400;font-size:12px">(6자 이상)</span></label>
+  <input class="inp" id="r-pass" type="password" placeholder="비밀번호" autocomplete="new-password"/></div>
+${S.rErr?`<div class="err">${esc(S.rErr)}</div>`:''}
+<button class="btn btn-green" data-a="do-register" style="margin-top:18px" ${S.rLoading?'disabled':''}>
+  ${S.rLoading?`<div class="loading-row"><div class="spin"></div><span>가입 신청 중...</span></div>`:'가입 신청하기'}
+</button>
+<p style="text-align:center;color:#9E9E9E;font-size:12px;margin-top:12px;line-height:1.7">
+  관리자 승인 후 이용 가능합니다
+</p>`; }
+
+// ── 대기/거절 화면 ────────────────────────────
+function rStatus(type){ return`
+<div class="status-screen">
+  <div class="status-icon">${type==='pending'?'⏳':'🚫'}</div>
+  <div class="status-title">${type==='pending'?'승인 대기 중':'가입이 거절되었습니다'}</div>
+  <div class="status-desc">${type==='pending'
+    ?'가입 신청이 접수되었습니다.<br/>관리자 승인 후 서비스를 이용할 수 있습니다.<br/>승인 시 자동으로 화면이 전환됩니다.'
+    :'관리자에게 문의해 주세요.'}
+  </div>
+  <button class="btn btn-gray" data-a="logout" style="margin-top:32px;max-width:200px">로그아웃</button>
+</div>`; }
+
+// ── 메인 화면 ─────────────────────────────────
+function rMain(){
+  const ud = S.userDoc||{};
+  const isAdmin = ud.role==='admin';
+  return`
+<div class="top-hdr">
+  <span class="app-name">🐔 닭 질병 진단</span>
+  <div class="user-info">
+    <span class="chip ${roleChipCls(ud.role)}">${roleLabel(ud.role)}</span>
+    <span class="user-name-chip">👤 ${esc(ud.name||'')}</span>
+  </div>
+</div>
+<div class="tab-bar">
+  <button class="tab ${S.mainTab==='board'?'active':''}" data-a="tab" data-tab="board">
+    <span class="tab-icon">📋</span><span class="tab-label">게시판</span><div class="tab-indicator"></div>
+  </button>
+  <button class="tab ${S.mainTab==='vets'?'active':''}" data-a="tab" data-tab="vets">
+    <span class="tab-icon">🩺</span><span class="tab-label">수의사</span><div class="tab-indicator"></div>
+  </button>
+  <button class="tab ${S.mainTab==='myposts'?'active':''}" data-a="tab" data-tab="myposts">
+    <span class="tab-icon">📝</span><span class="tab-label">내 게시글</span><div class="tab-indicator"></div>
+  </button>
+  ${isAdmin?`<button class="tab ${S.mainTab==='admin'?'active':''}" data-a="tab" data-tab="admin">
+    <span class="tab-icon">⚙️</span><span class="tab-label">관리자</span>
+    ${S.pendingUsers.length>0?`<span class="tab-badge">${S.pendingUsers.length}</span>`:''}
+    <div class="tab-indicator"></div>
+  </button>`:''}
+  <button class="tab ${S.mainTab==='settings'?'active':''}" data-a="tab" data-tab="settings">
+    <span class="tab-icon">👤</span><span class="tab-label">내 정보</span><div class="tab-indicator"></div>
+  </button>
+</div>
+<div class="content">
+  ${S.mainTab==='board'   ? rBoard()    : ''}
+  ${S.mainTab==='vets'    ? rVets()     : ''}
+  ${S.mainTab==='myposts' ? rMyPosts()  : ''}
+  ${S.mainTab==='admin'   ? rAdmin()    : ''}
+  ${S.mainTab==='settings'? rSettings() : ''}
+</div>
+${S.mainTab==='board'||S.mainTab==='myposts'?`
+<button class="fab" data-a="go-new-post">✏️ 글쓰기</button>`:''}
+`; }
+
+// ── 게시판 탭 ─────────────────────────────────
+function rBoard(){
+  if(S.posts.length===0) return`<div class="empty"><div class="empty-icon">📭</div><div class="empty-txt">아직 게시글이 없습니다.<br/>첫 번째 글을 작성해보세요!</div></div>`;
+  return S.posts.map(p=>`
+  <div class="post-card" data-a="open-post" data-id="${p.id}">
+    <div class="post-header">
+      <span class="chip ${roleChipCls(p.authorRole)}">${roleLabel(p.authorRole)}</span>
+      <span style="font-weight:600;font-size:13px;color:#212121">${esc(p.authorName)}</span>
+      ${p.authorFarm?`<span style="font-size:12px;color:#9E9E9E">${esc(p.authorFarm)}</span>`:''}
+    </div>
+    ${p.targetVetName?`<div class="target-vet">🩺 ${esc(p.targetVetName)} 선생님께</div>`:''}
+    <div class="post-title">${esc(p.title)}</div>
+    <div class="post-preview">${esc(p.content)}</div>
+    <div class="post-footer">
+      <span class="post-date">${fmtDate(p.createdAt)}</span>
+      <span class="post-comments">💬 ${p.commentCount||0}</span>
+    </div>
+  </div>`).join('');
+}
+
+// ── 수의사 탭 ─────────────────────────────────
+function rVets(){
+  if(S.vets.length===0) return`<div class="empty"><div class="empty-icon">🩺</div><div class="empty-txt">등록된 수의사가 없습니다.</div></div>`;
+  return`
+  <p style="color:#9E9E9E;font-size:13px;margin-bottom:12px">등록된 수의사 ${S.vets.length}명</p>
+  ${S.vets.map(v=>`
+  <div class="vet-card">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:36px">🩺</span>
+      <div>
+        <div class="vet-name">${esc(v.name)} 선생님</div>
+        <div class="vet-clinic">${esc(v.clinicName)}</div>
+        <div style="margin-top:6px"><span class="chip chip-blue">수의사</span></div>
+      </div>
+    </div>
+    <button class="btn btn-green" data-a="ask-vet" data-id="${v.id}" data-name="${esc(v.name)}"
+      style="margin-top:12px;padding:10px;font-size:13px">
+      이 수의사에게 질문하기
+    </button>
+  </div>`).join('')}`;
+}
+
+// ── 내 게시글 탭 ──────────────────────────────
+function rMyPosts(){
+  if(S.myPosts.length===0) return`<div class="empty"><div class="empty-icon">📝</div><div class="empty-txt">내가 작성한 게시글이 없습니다.</div></div>`;
+  return S.myPosts.map(p=>`
+  <div class="post-card" data-a="open-post" data-id="${p.id}">
+    ${p.targetVetName?`<div class="target-vet" style="margin-bottom:6px">🩺 ${esc(p.targetVetName)} 선생님께</div>`:''}
+    <div class="post-title">${esc(p.title)}</div>
+    <div class="post-preview">${esc(p.content)}</div>
+    <div class="post-footer">
+      <span class="post-date">${fmtDate(p.createdAt)}</span>
+      <span class="post-comments">💬 ${p.commentCount||0}</span>
+    </div>
+  </div>`).join('');
+}
+
+// ── 관리자 탭 ─────────────────────────────────
+function rAdmin(){
+  return`
+  <h3 style="font-weight:700;font-size:15px;color:#37474F;margin-bottom:14px">
+    승인 대기 회원 ${S.pendingUsers.length}명
+  </h3>
+  ${S.pendingUsers.length===0
+    ?`<div class="empty"><div class="empty-icon">✅</div><div class="empty-txt">대기 중인 가입 신청이 없습니다.</div></div>`
+    :S.pendingUsers.map(u=>`
+    <div class="admin-user-card">
+      <div class="admin-user-name">${esc(u.name)}</div>
+      <div class="admin-user-info">
+        ${roleLabel(u.role)} · ${esc(u.email)}<br/>
+        ${u.role==='farmer'?`🌾 ${esc(u.farmName)}`:`🏥 ${esc(u.clinicName)}`}<br/>
+        <span style="font-size:11px;color:#BDBDBD">${fmtDate(u.createdAt)} 신청</span>
+      </div>
+      <div class="admin-actions">
+        <button class="admin-btn-approve" data-a="approve" data-uid="${u.id}">✅ 승인</button>
+        <button class="admin-btn-reject" data-a="reject" data-uid="${u.id}">❌ 거절</button>
+      </div>
+    </div>`).join('')}`;
+}
+
+// ── 내 정보 탭 ────────────────────────────────
+function rSettings(){
+  const ud=S.userDoc||{};
+  return`
+  <div class="card" style="margin-bottom:14px">
+    <div style="text-align:center;padding:8px 0">
+      <div style="font-size:52px">${ud.role==='farmer'?'🌾':'🩺'}</div>
+      <div style="font-weight:700;font-size:18px;margin-top:10px">${esc(ud.name)}</div>
+      <div style="margin-top:6px"><span class="chip ${roleChipCls(ud.role)}">${roleLabel(ud.role)}</span></div>
+      ${ud.farmName?`<div style="color:#616161;font-size:13px;margin-top:8px">🌾 ${esc(ud.farmName)}</div>`:''}
+      ${ud.clinicName?`<div style="color:#616161;font-size:13px;margin-top:8px">🏥 ${esc(ud.clinicName)}</div>`:''}
+      <div style="color:#9E9E9E;font-size:12px;margin-top:6px">${esc(ud.email)}</div>
+    </div>
+  </div>
+  <button class="btn btn-red" data-a="logout" style="margin-top:8px">로그아웃</button>`;
+}
+
+// ── 게시글 상세 오버레이 ──────────────────────
+function rPostDetail(){
+  const p=S.selPost; if(!p) return '';
+  return`
+  <div class="overlay">
+    <div class="ov-hdr">
+      <button class="ov-back" data-a="close-post">←</button>
+      <span class="ov-title">게시글</span>
+      ${(S.userDoc?.uid===p.authorId || S.userDoc?.role==='admin')
+        ?`<button data-a="delete-post" data-id="${p.id}"
+            style="margin-left:auto;background:#FFEBEE;color:#C62828;border:1.5px solid #FFCDD2;
+                   border-radius:10px;padding:6px 12px;font-size:13px;font-weight:600;
+                   cursor:pointer;font-family:inherit">
+            🗑️ 삭제
+          </button>`
+        :''}
+    </div>
+    <div class="ov-scroll" style="padding-bottom:80px">
+      ${p.targetVetName?`<div class="target-vet" style="margin-bottom:12px">🩺 ${esc(p.targetVetName)} 선생님께</div>`:''}
+      <div class="post-detail-title">${esc(p.title)}</div>
+      <div class="post-detail-meta">
+        <span class="chip ${roleChipCls(p.authorRole)}">${roleLabel(p.authorRole)}</span>
+        <span style="font-weight:600;font-size:13px">${esc(p.authorName)}</span>
+        ${p.authorFarm?`<span style="font-size:12px;color:#9E9E9E">${esc(p.authorFarm)}</span>`:''}
+        <span class="post-date">${fmtDate(p.createdAt)}</span>
+      </div>
+      <div class="post-detail-content">${esc(p.content)}</div>
+      <div class="divider"></div>
+      <div class="comment-count">💬 댓글 ${S.comments.length}개</div>
+      ${S.comments.length===0?`<div style="text-align:center;padding:20px;color:#9E9E9E;font-size:13px">첫 댓글을 작성해보세요!</div>`:''}
+      ${S.comments.map(c=>`
+      <div class="comment-item">
+        <div class="comment-author">
+          <span class="chip ${roleChipCls(c.authorRole)}" style="font-size:11px">${roleLabel(c.authorRole)}</span>
+          <span class="comment-name">${esc(c.authorName)}</span>
+          <span class="comment-date">${fmtDate(c.createdAt)}</span>
+          ${(S.userDoc?.uid===c.authorId || S.userDoc?.role==='admin')
+            ?`<button data-a="delete-comment" data-id="${c.id}"
+                style="margin-left:auto;background:none;border:none;color:#BDBDBD;
+                       cursor:pointer;font-size:13px;padding:2px 6px">🗑️</button>`
+            :''}
+        </div>
+        <div class="comment-content">${esc(c.content)}</div>
+      </div>`).join('')}
+      <div class="spacer"></div>
+    </div>
+    <div class="comment-input-area">
+      <textarea class="comment-textarea" id="comment-input" rows="1"
+        placeholder="댓글을 입력하세요..." ${S.commenting?'disabled':''}>${esc(S.newComment)}</textarea>
+      <button class="comment-send-btn" data-a="do-comment" ${(S.newComment.trim()&&!S.commenting)?'':'disabled'}>
+        ${S.commenting?'..':'전송'}
+      </button>
+    </div>
+  </div>`; }
+
+// ── 새 글 쓰기 오버레이 ───────────────────────
+function rNewPost(){
+  return`
+  <div class="overlay">
+    <div class="ov-hdr">
+      <button class="ov-back" data-a="close-new-post">←</button>
+      <span class="ov-title">✏️ 새 글 작성</span>
+    </div>
+    <div class="ov-scroll">
+      <div class="form-row">
+        <label class="lbl">수의사 선택 <span style="color:#9E9E9E;font-weight:400;font-size:12px">(선택사항)</span></label>
+        ${S.npTargetVetId
+          ?`<div class="selected-vet-chip" data-a="clear-vet">
+              🩺 ${esc(S.npTargetVetName)} 선생님께 질문 <span>✕</span>
+            </div>`
+          :`<button class="btn btn-gray" data-a="toggle-vet-select" style="font-size:13px;padding:10px;margin-bottom:10px">
+              🩺 수의사 선택하기
+            </button>`}
+        ${S.showVetSelect?`
+        <div class="vet-select-list">
+          <div class="vet-select-item" data-a="select-vet" data-id="" data-name="">
+            <span style="color:#9E9E9E;font-size:13px">선택 안 함 (전체 공개)</span>
+          </div>
+          ${S.vets.map(v=>`
+          <div class="vet-select-item ${S.npTargetVetId===v.id?'selected':''}"
+            data-a="select-vet" data-id="${v.id}" data-name="${esc(v.name)}">
+            <strong>${esc(v.name)}</strong> 선생님
+            <span style="color:#9E9E9E;font-size:12px;margin-left:6px">${esc(v.clinicName)}</span>
+          </div>`).join('')}
+        </div>`:''}
+      </div>
+      <div class="form-row">
+        <label class="lbl">제목 <span style="color:#E53935">*</span></label>
+        <input class="inp" id="np-title" type="text" placeholder="제목을 입력하세요" value="${esc(S.npTitle)}"/>
+      </div>
+      <div class="form-row">
+        <label class="lbl">내용 <span style="color:#E53935">*</span></label>
+        <textarea class="inp" id="np-content" rows="8"
+          style="resize:vertical;line-height:1.65;min-height:180px"
+          placeholder="증상이나 질문을 자세히 작성해주세요.">${esc(S.npContent)}</textarea>
+      </div>
+      <button class="btn btn-green" data-a="do-post" ${(S.npTitle.trim()&&S.npContent.trim()&&!S.npPosting)?'':'disabled'}>
+        ${S.npPosting?`<div class="loading-row"><div class="spin"></div><span>등록 중...</span></div>`:'게시글 등록하기'}
+      </button>
+      <div class="spacer"></div>
+    </div>
+  </div>`; }
+
+// ── 이벤트 바인딩 ─────────────────────────────
+function bindEvents(){
+  // 클릭 리스너는 최초 1회만 등록
+  if(!_clickBound){
+    _clickBound = true;
+    document.getElementById('root').addEventListener('click', async e=>{
+      const el=e.target.closest('[data-a]'); if(!el) return;
+      const a=el.dataset.a;
+
+      if(a==='auth-tab')        set({screen:el.dataset.tab,lErr:'',rErr:''});
+      else if(a==='set-role')   set({rRole:el.dataset.role});
+      else if(a==='do-login')   { syncLoginForm(); await doLogin(); }
+      else if(a==='do-register'){ syncRegisterForm(); await doRegister(); }
+      else if(a==='logout')     { _mainStarted=false; await signOut(auth); }
+      else if(a==='tab')        set({mainTab:el.dataset.tab});
+      else if(a==='go-new-post') set({screen:'newPost',npTitle:'',npContent:'',npTargetVetId:null,npTargetVetName:'',showVetSelect:false});
+      else if(a==='close-new-post') set({screen:'main',showVetSelect:false});
+      else if(a==='toggle-vet-select') set({showVetSelect:!S.showVetSelect});
+      else if(a==='select-vet') {
+        set({npTargetVetId:el.dataset.id||null,npTargetVetName:el.dataset.name||'',showVetSelect:false});
+      }
+      else if(a==='clear-vet')  set({npTargetVetId:null,npTargetVetName:'',showVetSelect:false});
+      else if(a==='do-post')    { syncNewPostForm(); await doPost(); }
+      else if(a==='open-post')  {
+        const p=S.posts.find(x=>x.id===el.dataset.id);
+        if(p){ set({selPost:p,screen:'postDetail',comments:[],newComment:''}); startCommentsListener(p.id); }
+      }
+      else if(a==='close-post') {
+        if(S._unsubComments){S._unsubComments();S._unsubComments=null;}
+        set({screen:'main',selPost:null,comments:[]});
+      }
+      else if(a==='delete-post')    await doDeletePost(el.dataset.id);
+      else if(a==='delete-comment') await doDeleteComment(el.dataset.id);
+      else if(a==='do-comment') { syncComment(); await doComment(); }
+      else if(a==='approve')    await doApprove(el.dataset.uid,true);
+      else if(a==='reject')     await doApprove(el.dataset.uid,false);
+      else if(a==='ask-vet')    {
+        set({screen:'newPost',npTargetVetId:el.dataset.id,npTargetVetName:el.dataset.name,
+             npTitle:'',npContent:'',showVetSelect:false,mainTab:'board'});
+      }
+    });
+  }
+
+  // 엔터키 로그인
+  document.getElementById('l-pass')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){syncLoginForm();doLogin();} });
+
+  // 댓글 textarea 동기화
+  const ca=document.getElementById('comment-input');
+  if(ca){ ca.addEventListener('input',e=>{
+    S.newComment=e.target.value;
+    const b=document.querySelector('[data-a="do-comment"]');
+    if(b) b.disabled=!e.target.value.trim()||S.commenting;
+  });}
+
+  // 새 글 입력 동기화 + 버튼 활성화
+  const npTitle = document.getElementById('np-title');
+  const npContent = document.getElementById('np-content');
+  function updatePostBtn(){
+    const b = document.querySelector('[data-a="do-post"]');
+    if(b) b.disabled = !S.npTitle.trim() || !S.npContent.trim() || S.npPosting;
+  }
+  if(npTitle){ npTitle.addEventListener('input',e=>{ S.npTitle=e.target.value; updatePostBtn(); }); }
+  if(npContent){ npContent.addEventListener('input',e=>{ S.npContent=e.target.value; updatePostBtn(); }); }
+}
+
+function syncLoginForm(){
+  S.lEmail=document.getElementById('l-email')?.value||S.lEmail;
+  S.lPass=document.getElementById('l-pass')?.value||S.lPass;
+}
+function syncRegisterForm(){
+  S.rName=document.getElementById('r-name')?.value||S.rName;
+  S.rEmail=document.getElementById('r-email')?.value||S.rEmail;
+  S.rPass=document.getElementById('r-pass')?.value||S.rPass;
+  const org=document.getElementById('r-org')?.value||'';
+  if(S.rRole==='farmer') S.rFarm=org; else S.rClinic=org;
+}
+function syncNewPostForm(){
+  S.npTitle=document.getElementById('np-title')?.value||S.npTitle;
+  S.npContent=document.getElementById('np-content')?.value||S.npContent;
+}
+function syncComment(){
+  S.newComment=document.getElementById('comment-input')?.value||S.newComment;
+}
+
+render();
+</script>
+</body>
+</html>
